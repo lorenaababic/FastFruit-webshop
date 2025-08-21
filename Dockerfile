@@ -1,10 +1,10 @@
+FROM maven:3.8.4-openjdk-21-slim AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
+
 FROM openjdk:21-jdk-slim
-
-# Copy JAR file
-COPY target/*.jar app.jar
-
-# Expose port
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-
-# Run application
 ENTRYPOINT ["java", "-jar", "/app.jar"]
