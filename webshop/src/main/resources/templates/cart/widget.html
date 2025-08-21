@@ -1,0 +1,158 @@
+<!-- fragments/cart-widget.html -->
+<div th:fragment="cart-widget" class="cart-widget dropdown">
+  <!-- CSRF meta tags -->
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+  <button class="btn btn-outline-light dropdown-toggle" type="button" id="cartDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="fas fa-shopping-cart"></i>
+    <span class="cart-count badge bg-danger" id="cartItemCount" th:text="${itemCount != null ? itemCount : 0}">0</span>
+  </button>
+
+  <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 300px;">
+    <h6 class="dropdown-header">Košarica</h6>
+
+    <!-- Empty cart state -->
+    <div th:if="${cart == null || cart.items.isEmpty()}" class="text-center">
+      <p class="text-muted">Vaša košarica je prazna.</p>
+      <a th:href="@{/products}" class="btn btn-outline-primary btn-sm">Pregledaj proizvode</a>
+    </div>
+
+    <!-- Cart items -->
+    <div th:if="${cart != null && !cart.items.isEmpty()}">
+      <div th:each="entry, stat : ${cart.items}" th:if="${stat.index < 3}" class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+          <img th:src="${entry.value.product.imagePath != null ? '/images/' + entry.value.product.imagePath : '/images/placeholder.jpg'}"
+               class="img-thumbnail me-2" style="width: 50px; height: 50px; object-fit: cover;"
+               th:alt="${entry.value.product.name}"/>
+          <div>
+            <p class="mb-0 small" th:text="${entry.value.product.name}">Proizvod</p>
+            <small class="text-muted"
+                   th:text="${entry.value.quantity} + ' x ' + ${#numbers.formatDecimal(entry.value.product.price, 1, 2)} + ' €'">
+              1 x 0.00 €
+            </small>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-outline-danger remove-from-cart-widget"
+                th:attr="data-product-id=${entry.value.product.id}"
+                title="Ukloni iz košarice">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Show more items indicator -->
+      <div th:if="${cart.items.size() > 3}" class="text-center mb-2">
+        <small class="text-muted">... i još <span th:text="${cart.items.size() - 3}">0</span> proizvoda</small>
+      </div>
+
+      <hr>
+
+      <!-- Cart summary -->
+      <div class="d-flex justify-content-between mb-2">
+        <strong>Ukupno:</strong>
+        <strong th:text="${#numbers.formatDecimal(cart.totalAmount, 1, 2)} + ' €'">0.00 €</strong>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="d-grid gap-2">
+        <a th:href="@{/cart}" class="btn btn-outline-primary btn-sm">
+          <i class="fas fa-shopping-cart me-1"></i>Pogledaj košaricu
+        </a>
+        <a th:href="@{/checkout}" class="btn btn-primary btn-sm">
+          <i class="fas fa-credit-card me-1"></i>Nastavi na plaćanje
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cart Widget JavaScript -->
+<script th:fragment="cart-widget-script">
+  document.addEventListener('DOMContentLoaded', function () {
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute("content");
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute("content");
+
+    document.querySelectorAll('.remove-from-cart-widget').forEach(button => {
+      button.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const productId = parseInt(this.getAttribute('data-product-id'));
+        const btn = this;
+
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken && csrfHeader) {
+          headers[csrfHeader] = csrfToken;
+        }
+
+        fetch('/cart/api/remove', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ productId: productId })
+        })
+                .then(response => {
+                  if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                  }
+                  return response.json();
+                })
+                .then(data => {
+                  if (data.success) {
+                    showNotification('Proizvod uklonjen iz košarice', 'success');
+                    updateCartCount();
+                    setTimeout(() => {
+                      document.getElementById('cartDropdown').click();
+                      location.reload();
+                    }, 500);
+                  } else {
+                    showNotification('Greška: ' + (data.message || 'Nepoznata greška'), 'danger');
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                  }
+                })
+                .catch(error => {
+                  console.error('Error:', error);
+                  showNotification('Došlo je do greške', 'danger');
+                  btn.innerHTML = originalContent;
+                  btn.disabled = false;
+                });
+      });
+    });
+
+    function updateCartCount() {
+      fetch('/cart/api/count')
+              .then(response => response.json())
+              .then(data => {
+                const cartCounter = document.getElementById('cartItemCount');
+                if (cartCounter) {
+                  cartCounter.textContent = data.count;
+                }
+              })
+              .catch(error => console.error('Error updating cart count:', error));
+    }
+
+    function showNotification(message, type) {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+      alertDiv.style.top = '20px';
+      alertDiv.style.right = '20px';
+      alertDiv.style.zIndex = '9999';
+      alertDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      `;
+      document.body.appendChild(alertDiv);
+
+      setTimeout(() => {
+        if (alertDiv.parentNode) {
+          alertDiv.remove();
+        }
+      }, 3000);
+    }
+  });
+</script>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${category.id == null ? 'Dodaj novu kategoriju' : 'Uredi kategoriju'}">Kategorija</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<!-- Header -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0" th:text="${category.id == null ? 'Dodaj novu kategoriju' : 'Uredi kategoriju'}">Forma za kategoriju</h5>
+          <a th:href="@{/admin/categories}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Natrag
+          </a>
+        </div>
+        <div class="card-body">
+          <form th:action="@{/admin/categories/save}"
+                th:object="${category}"
+                method="post"
+                enctype="multipart/form-data">
+
+            <input type="hidden" th:field="*{id}" />
+            <input type="hidden" th:field="*{createdAt}" />
+            <input type="hidden" th:field="*{updatedAt}" />
+
+            <div class="row">
+              <div class="col-md-8">
+                <!-- Category Name -->
+                <div class="mb-3">
+                  <label for="name" class="form-label">
+                    <i class="bi bi-tag"></i> Naziv kategorije *
+                  </label>
+                  <input type="text"
+                         class="form-control"
+                         id="name"
+                         th:field="*{name}"
+                         th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''"
+                         required
+                         placeholder="Unesite naziv kategorije">
+                  <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-3">
+                  <label for="description" class="form-label">
+                    <i class="bi bi-text-paragraph"></i> Opis
+                  </label>
+                  <textarea class="form-control"
+                            id="description"
+                            th:field="*{description}"
+                            th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"
+                            rows="4"
+                            placeholder="Unesite opis kategorije (opcionalno)"
+                            maxlength="1000"></textarea>
+                  <div class="form-text">Maksimalno 1000 znakova</div>
+                  <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <!-- Image Upload -->
+                <div class="mb-3">
+                  <label class="form-label">
+                    <i class="bi bi-image"></i> Slika kategorije
+                  </label>
+
+                  <!-- Image Preview -->
+                  <div class="border rounded p-3 mb-3 text-center bg-light" id="imagePreview">
+                    <div th:if="${category.imagePath != null and !#strings.isEmpty(category.imagePath)}">
+                      <img th:src="@{'/images/' + ${category.imagePath}}" alt="Current image" id="currentImage" class="img-fluid" style="max-height: 150px;">
+                      <div class="mt-2 small text-muted">Trenutna slika</div>
+                    </div>
+                    <div th:if="${category.imagePath == null or #strings.isEmpty(category.imagePath)}"
+                         class="text-muted" id="noImageText">
+                      <i class="bi bi-image display-4 d-block mb-2"></i>
+                      Nema slike
+                    </div>
+                  </div>
+
+                  <!-- File Input -->
+                  <div class="mb-3">
+                    <input type="file"
+                           class="form-control"
+                           id="imageFile"
+                           name="imageFile"
+                           accept="image/*"
+                           onchange="previewImage(this)">
+                  </div>
+
+                  <div class="form-text mt-2">
+                    Podržani formati: JPG, PNG, GIF (max 5MB)
+                  </div>
+
+                  <!-- Current image path (hidden) -->
+                  <input type="hidden" th:field="*{imagePath}" id="currentImagePath">
+
+                  <!-- Remove image button -->
+                  <div th:if="${category.imagePath != null and !#strings.isEmpty(category.imagePath)}" class="mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeCurrentImage()">
+                      <i class="bi bi-trash"></i> Ukloni trenutnu sliku
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-end pt-3 border-top">
+              <a th:href="@{/admin/categories}" class="btn btn-light me-2">
+                <i class="bi bi-x-circle"></i> Odustani
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save"></i>
+                <span th:text="${category.id == null ? 'Dodaj kategoriju' : 'Spremi promjene'}">Spremi</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+
+<script>
+  function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    const noImageText = document.getElementById('noImageText');
+    const currentImage = document.getElementById('currentImage');
+
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        if (noImageText) {
+          noImageText.style.display = 'none';
+        }
+
+        if (currentImage) {
+          currentImage.style.display = 'none';
+        }
+
+        let previewImg = document.getElementById('previewImage');
+        if (!previewImg) {
+          previewImg = document.createElement('img');
+          previewImg.id = 'previewImage';
+          previewImg.className = 'img-fluid';
+          previewImg.style.maxHeight = '150px';
+          preview.appendChild(previewImg);
+
+          const newImageLabel = document.createElement('div');
+          newImageLabel.className = 'mt-2 small text-success';
+          newImageLabel.textContent = 'Nova slika';
+          newImageLabel.id = 'newImageLabel';
+          preview.appendChild(newImageLabel);
+        }
+
+        previewImg.src = e.target.result;
+      }
+
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  function removeCurrentImage() {
+    if (confirm('Jeste li sigurni da želite ukloniti trenutnu sliku?')) {
+      document.getElementById('currentImagePath').value = '';
+
+      const currentImage = document.getElementById('currentImage');
+      if (currentImage) {
+        currentImage.style.display = 'none';
+      }
+
+      const noImageText = document.getElementById('noImageText');
+      if (noImageText) {
+        noImageText.style.display = 'block';
+      }
+
+      event.target.closest('.mt-2').style.display = 'none';
+    }
+  }
+
+  document.querySelector('form').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+
+    if (!name) {
+      e.preventDefault();
+      alert('Naziv kategorije je obavezan!');
+      document.getElementById('name').focus();
+      return false;
+    }
+
+    if (name.length > 255) {
+      e.preventDefault();
+      alert('Naziv kategorije ne može biti duži od 255 znakova!');
+      document.getElementById('name').focus();
+      return false;
+    }
+
+    const description = document.getElementById('description').value;
+    if (description.length > 1000) {
+      e.preventDefault();
+      alert('Opis ne može biti duži od 1000 znakova!');
+      document.getElementById('description').focus();
+      return false;
+    }
+  });
+
+  document.getElementById('description').addEventListener('input', function() {
+    const current = this.value.length;
+    const max = 1000;
+    const counter = this.nextElementSibling;
+
+    if (counter && counter.classList.contains('form-text')) {
+      counter.textContent = `${current}/${max} znakova`;
+
+      if (current > max * 0.9) {
+        counter.classList.add('text-warning');
+      } else {
+        counter.classList.remove('text-warning');
+      }
+
+      if (current > max) {
+        counter.classList.add('text-danger');
+        counter.classList.remove('text-warning');
+      } else {
+        counter.classList.remove('text-danger');
+      }
+    }
+  });
+</script>
+</body>
+</html>

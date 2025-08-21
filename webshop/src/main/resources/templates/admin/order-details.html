@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin-layout}">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Deatlji narudžbe</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div layout:fragment="content">
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Order Details</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/admin/orders">Orders</a></li>
+            <li class="breadcrumb-item active">Order #<span th:text="${order.id}"></span></li>
+        </ol>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle me-1"></i> Order Information
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th style="width: 35%;">Order ID:</th>
+                                <td th:text="${order.id}"></td>
+                            </tr>
+                            <tr>
+                                <th>Date:</th>
+                                <td th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                            </tr>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                        <span th:class="${order.status == 'COMPLETED' ? 'badge bg-success' :
+                                                         order.status == 'PENDING' ? 'badge bg-warning' :
+                                                         order.status == 'CANCELLED' ? 'badge bg-danger' : 'badge bg-info'}"
+                                              th:text="${order.status}"></span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Payment Method:</th>
+                                <td th:text="${order.paymentMethod}"></td>
+                            </tr>
+                            <tr>
+                                <th>Total Amount:</th>
+                                <td th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2)} + ' €'"></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-user me-1"></i> Customer Information
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th style="width: 35%;">Username:</th>
+                                <td th:text="${order.user != null ? order.user.username : 'Guest'}"></td>
+                            </tr>
+                            <tr th:if="${order.user != null}">
+                                <th>Name:</th>
+                                <td th:text="${order.user.username}"></td>
+                            </tr>
+                            <tr th:if="${order.user != null}">
+                                <th>Email:</th>
+                                <td th:text="${order.user.email}"></td>
+                            </tr>
+                            <tr>
+                                <th>Shipping Address:</th>
+                                <td th:text="${order.shippingAddress}"></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-list me-1"></i> Order Items
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Subtotal</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="item : ${order.items}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img th:src="@{${item.product.imagePath} != null ? '/images/' + ${item.product.imagePath} : '/images/placeholder.jpg'}"
+                                     class="img-thumbnail me-2" style="max-width: 50px; max-height: 50px; object-fit: cover;"
+                                     th:alt="${item.product.name}">
+                                <div>
+                                    <span th:text="${item.product.name}"></span>
+                                    <br>
+                                    <small class="text-muted">
+                                        Product ID: <span th:text="${item.product.id}"></span>
+                                    </small>
+                                </div>
+                            </div>
+                        </td>
+                        <td th:text="${#numbers.formatDecimal(item.price, 1, 2)} + ' €'"></td>
+                        <td th:text="${item.quantity}"></td>
+                        <td th:text="${#numbers.formatDecimal(item.price * item.quantity, 1, 2)} + ' €'"></td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-end fw-bold">Total:</td>
+                        <td th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2)} + ' €'" class="fw-bold"></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mb-4">
+            <a href="/admin/orders" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Orders
+            </a>
+            <div>
+                <a href="#" class="btn btn-primary me-2">
+                    <i class="fas fa-print me-1"></i> Print Invoice
+                </a>
+                <button type="button" class="btn btn-success">
+                    <i class="fas fa-envelope me-1"></i> Email Invoice
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>

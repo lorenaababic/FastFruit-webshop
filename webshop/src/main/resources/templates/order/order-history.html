@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order History | FastFruit</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<!-- Header -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<!-- Main Content -->
+<main class="container my-5">
+  <h1 class="mb-4">Povijest narudžbi</h1>
+
+  <!-- No Orders Message -->
+  <div class="alert alert-info" th:if="${#lists.isEmpty(orders)}">
+    <i class="fas fa-info-circle me-2"></i> Nemate narudžbi. <a th:href="@{/products}" class="alert-link">Započnite kupovinu</a> kako biste kreirali svoju prvu narudžbu.
+  </div>
+
+  <!-- Orders List -->
+  <div th:if="${!#lists.isEmpty(orders)}">
+    <div class="list-group">
+      <a th:each="order : ${orders}" th:href="@{/order/{id}(id=${order.id})}" class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between align-items-center">
+          <div>
+            <h5 class="mb-1">Narudžba #<span th:text="${order.id}">12345</span></h5>
+            <p class="mb-1">
+              <span th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy. HH:mm')}">01.01.2023.</span> |
+              <span th:text="${order.paymentMethod.displayName}">Način plaćanja</span> |
+              <span th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2)} + ' €'">0.00 €</span>
+            </p>
+            <small th:text="${order.status.name()}">STATUS</small>
+          </div>
+          <span class="badge rounded-pill"
+                th:classappend="${
+                            order.status.name() == 'PENDING' ? 'bg-warning' :
+                            order.status.name() == 'PROCESSING' ? 'bg-info' :
+                            order.status.name() == 'SHIPPED' ? 'bg-primary' :
+                            order.status.name() == 'DELIVERED' ? 'bg-success' :
+                            order.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'
+                          }"
+                th:text="${order.status.name()}">
+                        Status
+                    </span>
+        </div>
+      </a>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

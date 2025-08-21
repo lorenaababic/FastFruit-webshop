@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Detail | FastFruit</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<!-- Header -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<!-- Main Content -->
+<main class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Narudžba #<span th:text="${order.id}">12345</span></h1>
+        <span class="badge rounded-pill fs-6"
+              th:classappend="${
+                order.status.name() == 'PENDING' ? 'bg-warning' :
+                order.status.name() == 'PROCESSING' ? 'bg-info' :
+                order.status.name() == 'SHIPPED' ? 'bg-primary' :
+                order.status.name() == 'DELIVERED' ? 'bg-success' :
+                order.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'
+              }"
+              th:text="${order.status.name()}">
+            Status
+        </span>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Proizvodi</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th style="width: 80px;"></th>
+                                <th>Proizvod</th>
+                                <th class="text-center">Količina</th>
+                                <th class="text-end">Cijena</th>
+                                <th class="text-end">Ukupno</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="item : ${order.items}">
+                                <td>
+                                    <img th:src="@{${item.product.imagePath} != null ? '/images/' + ${item.product.imagePath} : '/images/placeholder.jpg'}"
+                                         class="img-thumbnail" width="60" th:alt="${item.product.name}">
+                                </td>
+                                <td>
+                                    <a th:href="@{/products/{id}(id=${item.product.id})}"
+                                       class="text-decoration-none" th:text="${item.product.name}">
+                                        Proizvod
+                                    </a>
+                                </td>
+                                <td class="text-center" th:text="${item.quantity}">1</td>
+                                <td class="text-end" th:text="${#numbers.formatDecimal(item.price, 1, 2)} + ' €'">0.00 €</td>
+                                <td class="text-end" th:text="${#numbers.formatDecimal(item.price.multiply(new java.math.BigDecimal(item.quantity)), 1, 2)} + ' €'">0.00 €</td>
+                            </tr>
+                            </tbody>
+                            <tfoot>
+                            <tr>
+                                <th colspan="4" class="text-end">Ukupno:</th>
+                                <th class="text-end" th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2)} + ' €'">0.00 €</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Informacije o narudžbi</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Datum:</strong> <span th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy. HH:mm')}">01.01.2023.</span></p>
+                    <p><strong>Status:</strong> <span th:text="${order.status.name()}">STATUS</span></p>
+                    <p><strong>Način plaćanja:</strong> <span th:text="${order.paymentMethod.displayName}">Način plaćanja</span></p>
+                    <p><strong>Ukupno:</strong> <span th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2)} + ' €'">0.00 €</span></p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Podaci za dostavu</h5>
+                </div>
+                <div class="card-body">
+                    <p th:text="${order.shippingAddress}">Adresa za dostavu</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <a th:href="@{/order}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Povratak na popis narudžbi
+        </a>
+
+        <!-- Cancel Order Button - visible only for PENDING orders -->
+        <form th:if="${order.status.name() == 'PENDING'}" th:action="@{/order/{id}/cancel(id=${order.id})}" method="post" onsubmit="return confirm('Jeste li sigurni da želite otkazati narudžbu?');">
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-times me-2"></i> Otkaži narudžbu
+            </button>
+        </form>
+    </div>
+</main>
+
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

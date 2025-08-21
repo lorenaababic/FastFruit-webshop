@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer th:fragment="footer" class="bg-light py-4 mt-5 border-top">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <h5>O nama</h5>
+                <p>Fast Fruit nudi najbolje smoothie i sokove s domaćim voćem i povrćem. Dostava na području cijele Hrvatske.</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h5>Brzi linkovi</h5>
+                <ul class="list-unstyled">
+                    <li><a th:href="@{/}">Početna</a></li>
+                    <li><a th:href="@{/categories}">Kategorije</a></li>
+                    <li><a th:href="@{/products}">Proizvodi</a></li>
+                    <li><a th:href="@{/cart}">Košarica</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h5>Kontakt</h5>
+                <address>
+                    <i class="bi bi-geo-alt"></i> Voćarska ulica 123, Zagreb<br>
+                    <i class="bi bi-telephone"></i> +385 1 234 5678<br>
+                    <i class="bi bi-envelope"></i> info@fastfruit.hr
+                </address>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-6">
+                <p>&copy; 2025 Fast Fruit. Sva prava pridržana.</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <ul class="list-inline mb-0">
+                    <li class="list-inline-item"><a href="https://www.facebook.com/fastfruitac"><i class="bi bi-facebook fs-5"></i></a></li>
+                    <li class="list-inline-item"><a href="https://www.instagram.com/fastfruitzagreb"><i class="bi bi-instagram fs-5"></i></a></li>
+                    <li class="list-inline-item"><a href="#"><i class="bi bi-twitter fs-5"></i></a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

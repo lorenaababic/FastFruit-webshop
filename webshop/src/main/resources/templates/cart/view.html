@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <title>Košarica | FastFruit</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="container my-5">
+  <h1>Košarica</h1>
+
+  <div class="alert alert-info" th:if="${cart == null || cart.items.isEmpty()}">
+    Vaša košarica je prazna.
+    <a th:href="@{/products}" class="alert-link">Pogledaj proizvode</a>.
+  </div>
+
+  <div th:if="${cart != null && !cart.items.isEmpty()}">
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Slika</th>
+        <th>Proizvod</th>
+        <th>Cijena</th>
+        <th>Količina</th>
+        <th>Ukupno</th>
+        <th>Akcija</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="entry : ${cart.items}">
+        <td>
+          <img th:src="@{${entry.value.product.imagePath} != null ? '/images/' + ${entry.value.product.imagePath} : '/images/placeholder.jpg'}"
+               class="img-thumbnail"
+               style="width: 60px; height: 60px; object-fit: cover;"
+               th:alt="${entry.value.product.name}"/>
+        </td>
+        <td th:text="${entry.value.product.name}">Proizvod</td>
+        <td th:text="${#numbers.formatDecimal(entry.value.product.price, 1, 2)} + ' €'">0.00 €</td>
+        <td>
+          <div class="d-flex align-items-center">
+            <button class="btn btn-sm btn-outline-secondary quantity-decrease me-2"
+                    th:attr="data-product-id=${entry.value.product.id}">-</button>
+            <span class="quantity-display mx-2"
+                  th:attr="data-product-id=${entry.value.product.id}"
+                  th:text="${entry.value.quantity != null ? entry.value.quantity : 1}">1</span>
+            <button class="btn btn-sm btn-outline-secondary quantity-increase ms-2"
+                    th:attr="data-product-id=${entry.value.product.id}">+</button>
+          </div>
+        </td>
+        <td th:text="${#numbers.formatDecimal(entry.value.product.price.multiply(new java.math.BigDecimal(entry.value.quantity != null ? entry.value.quantity : 1)), 1, 2)} + ' €'">0.00 €</td>
+        <td>
+          <button class="btn btn-sm btn-danger remove-item"
+                  th:attr="data-product-id=${entry.value.product.id}">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between">
+      <a th:href="@{/products}" class="btn btn-outline-secondary">Nastavi kupovinu</a>
+      <button id="clear-cart" class="btn btn-outline-danger">Isprazni košaricu</button>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-body">
+        <p>Ukupno: <strong th:text="${#numbers.formatDecimal(cart.totalAmount, 1, 2)} + ' €'">0.00 €</strong></p>
+        <p>Dostava: <strong th:text="${freeShipping != null && freeShipping ? 'Besplatno' : #numbers.formatDecimal(shippingCost, 1, 2) + ' €'}">5.00 €</strong></p>
+        <hr>
+        <p>Za platiti: <strong th:text="${#numbers.formatDecimal(finalAmount, 1, 2)} + ' €'">0.00 €</strong></p>
+        <a th:href="@{/checkout}" class="btn btn-primary mt-2">Nastavi na plaćanje</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute("content");
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute("content");
+
+    function sendCartRequest(url, data) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrfToken && csrfHeader) {
+        headers[csrfHeader] = csrfToken;
+      }
+
+      fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(data)
+      })
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error('Network response was not ok');
+                }
+                return response.json();
+              })
+              .then(data => {
+                if (data.success) {
+                  showNotification(data.message || 'Uspješno ažurirano', 'success');
+                  setTimeout(() => location.reload(), 500);
+                } else {
+                  showNotification('Greška: ' + (data.message || 'Nepoznata greška'), 'danger');
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                showNotification('Došlo je do greške: ' + error.message, 'danger');
+              });
+    }
+
+    document.querySelectorAll('.quantity-increase').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const productId = parseInt(this.getAttribute('data-product-id'));
+        const quantitySpan = document.querySelector(`span.quantity-display[data-product-id="${productId}"]`);
+        const currentQty = parseInt(quantitySpan.textContent.trim());
+        const newQty = currentQty + 1;
+
+        const originalText = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        this.disabled = true;
+
+        sendCartRequest('/cart/api/update', { productId: productId, quantity: newQty });
+      });
+    });
+
+    document.querySelectorAll('.quantity-decrease').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const productId = parseInt(this.getAttribute('data-product-id'));
+        const quantitySpan = document.querySelector(`span.quantity-display[data-product-id="${productId}"]`);
+        const currentQty = parseInt(quantitySpan.textContent.trim());
+
+        if (currentQty <= 1) {
+          showNotification('Minimalna količina je 1. Koristite dugme za brisanje da uklonite proizvod.', 'warning');
+          return;
+        }
+
+        const newQty = currentQty - 1;
+
+        const originalText = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        this.disabled = true;
+
+        sendCartRequest('/cart/api/update', { productId: productId, quantity: newQty });
+      });
+    });
+
+    document.querySelectorAll('.remove-item').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const productId = parseInt(this.getAttribute('data-product-id'));
+
+        if (confirm('Jeste li sigurni da želite ukloniti ovaj proizvod iz košarice?')) {
+          const originalText = this.innerHTML;
+          this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+          this.disabled = true;
+
+          sendCartRequest('/cart/api/remove', { productId: productId });
+        }
+      });
+    });
+
+    document.getElementById('clear-cart')?.addEventListener('click', function() {
+      if (confirm('Jeste li sigurni da želite isprazniti cijelu košaricu?')) {
+        const originalText = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Brisanje...';
+        this.disabled = true;
+
+        sendCartRequest('/cart/api/clear', {});
+      }
+    });
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+      notification.style.top = '20px';
+      notification.style.right = '20px';
+      notification.style.zIndex = '9999';
+      notification.innerHTML = `
+      <strong>${type === 'success' ? 'Uspjeh!' : type === 'warning' ? 'Upozorenje!' : 'Greška!'}</strong> ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.classList.remove('show');
+          setTimeout(() => notification.remove(), 300);
+        }
+      }, 3000);
+    }
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
