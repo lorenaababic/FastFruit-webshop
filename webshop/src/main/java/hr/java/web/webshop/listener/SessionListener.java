@@ -15,6 +15,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,7 +32,6 @@ public class SessionListener implements HttpSessionListener {
         int currentSessions = activeSessions.incrementAndGet();
         String sessionId = se.getSession().getId();
 
-        // Dobivanje IP adrese
         String ipAddress = null;
         try {
             ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
@@ -42,47 +42,66 @@ public class SessionListener implements HttpSessionListener {
         }
 
         log.info("New session created: {} - Total active sessions: {}", sessionId, currentSessions);
-
         se.getSession().setMaxInactiveInterval(30 * 60);
 
-        // Dobivanje Spring servisa kroz WebApplicationContext
         try {
             WebApplicationContext context = WebApplicationContextUtils
                     .getWebApplicationContext(se.getSession().getServletContext());
 
             if (context != null) {
+                // Provjeri je li produkcija
+                String[] profiles = context.getEnvironment().getActiveProfiles();
+                boolean isProduction = Arrays.asList(profiles).contains("prod");
+
+                if (isProduction) {
+                    // Dodaj kratku pauzu na produkciji
+                    Thread.sleep(2000);
+                }
+
                 UserSessionService userSessionService = context.getBean(UserSessionService.class);
 
-                // NOVO: Provjeri postoji li već sesija s ovim ID-om
-                UserSession existingSession = userSessionService.findBySessionId(sessionId);
+                // Retry logika
+                int retries = 3;
+                for (int i = 0; i < retries; i++) {
+                    try {
+                        UserSession existingSession = userSessionService.findBySessionId(sessionId);
 
-                if (existingSession != null) {
-                    // Ako sesija postoji, samo je reaktiviraj
-                    log.info("Session {} already exists, reactivating...", sessionId);
-                    existingSession.setActive(true);
-                    existingSession.setLastActivity(LocalDateTime.now());
-                    if (ipAddress != null) {
-                        existingSession.setIpAddress(ipAddress);
+                        if (existingSession != null) {
+                            log.info("Session {} already exists, reactivating...", sessionId);
+                            existingSession.setActive(true);
+                            existingSession.setLastActivity(LocalDateTime.now());
+                            if (ipAddress != null) {
+                                existingSession.setIpAddress(ipAddress);
+                            }
+                            userSessionService.saveUserSession(existingSession);
+                        } else {
+                            UserSession userSession = new UserSession();
+                            userSession.setSessionId(sessionId);
+                            userSession.setCreatedAt(LocalDateTime.now());
+                            userSession.setActive(true);
+                            userSession.setIpAddress(ipAddress);
+                            userSessionService.saveUserSession(userSession);
+                            log.debug("New session {} saved to database", sessionId);
+                        }
+                        break; // Uspješno, prekini retry
+
+                    } catch (Exception dbException) {
+                        log.warn("Database access attempt {}/{} failed: {}", i + 1, retries, dbException.getMessage());
+                        if (i == retries - 1) {
+                            log.error("All database access attempts failed, skipping session save");
+                        } else {
+                            Thread.sleep(1000);
+                        }
                     }
-                    userSessionService.saveUserSession(existingSession);
-                } else {
-                    // Kreiraj novu sesiju
-                    UserSession userSession = new UserSession();
-                    userSession.setSessionId(sessionId);
-                    userSession.setCreatedAt(LocalDateTime.now());
-                    userSession.setActive(true);
-                    userSession.setIpAddress(ipAddress);
-
-                    userSessionService.saveUserSession(userSession);
-                    log.debug("New session {} saved to database", sessionId);
                 }
             }
         } catch (Exception e) {
-            log.error("Error saving session to database: {}", e.getMessage(), e);
+            log.error("Error saving session to database: {}", e.getMessage());
         }
 
         logSessionStatistics(currentSessions);
     }
+
 
     @Override
     public void sessionDestroyed(HttpSessionEvent se) {
