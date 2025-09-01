@@ -13,8 +13,11 @@ INSERT INTO users (username, email, password, role, created_at) VALUES
 INSERT INTO products (name, description, price, quantity, image_path, category_id, created_at, updated_at) VALUES
                                                                                                                ('Berry Blast', 'A refreshing mix of berries for a revitalizing smoothie.', 4.99, 33, 'smoothie_berry_blast.jpg', 1, NOW(), NOW()),
                                                                                                                ('Exotic Cranberry', 'A tangy blend of cranberries with a tropical twist.', 5.99, 54, 'smoothie_exotic_cranberry.jpg', 1, NOW(), NOW()),
+                                                                                                               ('Fast Fruit', 'Quick, healthy, and delicious fruit-packed smoothie.', 6.99, 99, 'smoothie_fast_fruit.jpg', 1, NOW(), NOW()),
+                                                                                                               ('Iron Man', 'Packed with iron and healthy greens for an energizing boost.', 3.99, 29, 'smoothie_iron_man.jpg', 1, NOW(), NOW()),
                                                                                                                ('Morning Glory', 'Start your day with this energizing fruit smoothie.', 6.99, 79, 'smoothie_morning_glory.jpg', 1, NOW(), NOW()),
-                                                                                                               ('Multi Smoothie', 'A smoothie with a mix of superfoods for every occasion.', 3.99, 38, 'smoothie_multi_smoothie.jpg', 1, NOW(), NOW());
+                                                                                                               ('Multi Smoothie', 'A smoothie with a mix of superfoods for every occasion.', 3.99, 38, 'smoothie_multi_smoothie.jpg', 1, NOW(), NOW()),
+                                                                                                               ('Popeye', 'A protein-packed smoothie with spinach and other greens.', 4.99, 70, 'smoothie_popeye.jpg', 1, NOW(), NOW());
 
 -- Sokovi (kategorija 2)
 INSERT INTO products (name, description, price, quantity, category_id, image_path, created_at, updated_at) VALUES
