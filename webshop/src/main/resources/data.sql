@@ -9,9 +9,24 @@ INSERT INTO users (username, email, password, role, created_at) VALUES
                                                                     ('admin', 'admin1@webshop.hr', '$2a$10$FRH28VcX3qgV8tIDnhoelueo6t1zRL4zCItnFXpEKCGhLb5YjQcE6', 'ROLE_ADMIN', NOW()),
                                                                     ('lorena', 'lorena@test12', '$2a$10$0cDC2wfOdf4vXgDTBzJ2QOkkF/45XWAzXyGGi2jCdawzA/f097jSi', 'ROLE_USER', NOW());
 
--- Proizvodi
+-- Smoothie napici (kategorija 1)
 INSERT INTO products (name, description, price, quantity, image_path, category_id, created_at, updated_at) VALUES
                                                                                                                ('Berry Blast', 'A refreshing mix of berries for a revitalizing smoothie.', 4.99, 33, 'smoothie_berry_blast.jpg', 1, NOW(), NOW()),
                                                                                                                ('Exotic Cranberry', 'A tangy blend of cranberries with a tropical twist.', 5.99, 54, 'smoothie_exotic_cranberry.jpg', 1, NOW(), NOW()),
                                                                                                                ('Morning Glory', 'Start your day with this energizing fruit smoothie.', 6.99, 79, 'smoothie_morning_glory.jpg', 1, NOW(), NOW()),
                                                                                                                ('Multi Smoothie', 'A smoothie with a mix of superfoods for every occasion.', 3.99, 38, 'smoothie_multi_smoothie.jpg', 1, NOW(), NOW());
+
+-- Sokovi (kategorija 2)
+INSERT INTO products (name, description, price, quantity, category_id, image_path, created_at, updated_at) VALUES
+                                                                                                               ('Healthy Beast', 'Zeleni detox sok za energiju i zdravlje. Napravljen od špinata, jabuke i limuna.', 4.49, 40, 2, 'healthy_beast.jpeg', NOW(), NOW()),
+                                                                                                               ('Jamaican Dream', 'Egzotični sok od tropskog voća. Osvježavajuć i pun vitamina.', 3.99, 50, 2, 'jamaican_dream.jpeg', NOW(), NOW());
+
+-- Smoothie paketići (kategorija 3)
+INSERT INTO products (name, description, price, quantity, category_id, image_path, created_at, updated_at) VALUES
+                                                                                                               ('Berry Blast Mix', 'A refreshing mix of berries for a revitalizing smoothie.', 3.99, 50, 3, 'berry_blast.jpg', NOW(), NOW()),
+                                                                                                               ('Exotic Cranberry Mix', 'A tangy blend of cranberries with a tropical twist.', 3.99, 60, 3, 'exotic_cranberry.jpg', NOW(), NOW()),
+                                                                                                               ('Fast Fruit Mix', 'Quick, healthy, and delicious fruit-packed smoothie.', 3.99, 99, 3, 'fast_fruit.jpg', NOW(), NOW()),
+                                                                                                               ('Iron Man Mix', 'Packed with iron and healthy greens for an energizing boost.', 3.99, 30, 3, 'iron_man.jpg', NOW(), NOW()),
+                                                                                                               ('Morning Glory Mix', 'Start your day with this energizing fruit smoothie.', 3.99, 80, 3, 'morning_glory.jpg', NOW(), NOW()),
+                                                                                                               ('Multi Smoothie Mix', 'A smoothie with a mix of superfoods for every occasion.', 3.99, 40, 3, 'multi_smoothie.jpg', NOW(), NOW()),
+                                                                                                               ('Popeye Mix', 'A protein-packed smoothie with spinach and other greens.', 3.99, 70, 3, 'popeye.jpg', NOW(), NOW());
