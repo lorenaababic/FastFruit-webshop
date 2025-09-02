@@ -19,15 +19,13 @@ import java.io.IOException;
 @Component
 public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    @Autowired
-    @Lazy
-    private UserService userService;
+    private final UserService userService;
+    private final LoginLogService loginLogService;
 
-    @Autowired
-    private LoginLogService loginLogService;
-
-    @Autowired
-    private SessionListener sessionListener;
+    public LoginSuccessHandler(LoginLogService loginLogService, @Lazy UserService userService) {
+        this.loginLogService = loginLogService;
+        this.userService = userService;
+    }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -36,20 +34,13 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String username = userDetails.getUsername();
         String ipAddress = request.getRemoteAddr();
-        String userAgent = request.getHeader("User-Agent");
         String sessionId = request.getSession().getId();
 
         log.info("Successful login for user: {} from IP: {}", username, ipAddress);
 
         userService.findByUsername(username).ifPresent(user -> {
             loginLogService.logLogin(user, ipAddress);
-
-            try {
-                sessionListener.updateSessionWithUser(sessionId, username, ipAddress, userAgent);
-                log.debug("Session {} linked to user: {}", sessionId, username);
-            } catch (Exception e) {
-                log.error("Error updating session with user info for {}: {}", username, e.getMessage(), e);
-            }
+            log.info("Session {} linked to user: {}", sessionId, username);
         });
 
         super.onAuthenticationSuccess(request, response, authentication);

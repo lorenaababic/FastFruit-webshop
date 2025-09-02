@@ -35,7 +35,4 @@ public class SessionListener implements HttpSessionListener {
         return activeSessions.get();
     }
 
-    public void updateSessionWithUser(String sessionId, String username, String ipAddress, String userAgent) {
-        log.info("Session {} linked to user: {} from IP: {}", sessionId, username, ipAddress);
-    }
 }
